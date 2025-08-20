@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  order-service:
+    build: ./order-service
+    ports:
+      - "8081:8081"
+    environment:
+      - JAVA_VERSION=17
+    depends_on:
+      - kafka
+      - postgres
+    networks:
+      - ecommerce-net
+
+  payment-service:
+    build: ./payment-service
+    ports:
+      - "8082:8082"
+    environment:
+      - JAVA_VERSION=17
+    depends_on:
+      - kafka
+      - postgres
+    networks:
+      - ecommerce-net
+
+  inventory-service:
+    build: ./inventory-service
+    ports:
+      - "8083:8083"
+    environment:
+      - JAVA_VERSION=17
+    depends_on:
+      - kafka
+      - postgres
+    networks:
+      - ecommerce-net
+
+  shipping-service:
+    build: ./shipping-service
+    ports:
+      - "8084:8084"
+    environment:
+      - JAVA_VERSION=17
+    depends_on:
+      - kafka
+      - postgres
+    networks:
+      - ecommerce-net
+
+  temporal:
+    image: temporalio/auto-setup:latest
+    ports:
+      - "7233:7233"
+    environment:
+      - DB=postgresql
+    depends_on:
+      - postgres
+    networks:
+      - ecommerce-net
+
+  kafka:
+    image: bitnami/kafka:latest
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+    depends_on:
+      - zookeeper
+    networks:
+      - ecommerce-net
+
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    ports:
+      - "2181:2181"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - ecommerce-net
+
+  postgres:
+    image: postgres:13
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=ecommerce
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - ecommerce-net
+
+volumes:
+  pgdata:
+
+networks:
+  ecommerce-net:
+    driver: bridge
